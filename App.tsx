@@ -25,7 +25,7 @@ const { useState } = React
 type Player = number
 type RawCard = { num: number, opener: Player | null }
 type Card = RawCard & { id: number }
-type PlayerResult = { player: Player, count: number }
+type PlayerResult = { player: Player, gotCardCount: number, tryCount: number }
 type Result = PlayerResult[]
 
 function newCard(num: number): RawCard {
@@ -63,7 +63,8 @@ function useGame(playerCount: number) {
   const [opened1, setOpened1] = useState<Card | null>(null)
   const [opened2, setOpened2] = useState<Card | null>(null)
   const [result, setResult] = useState<Result | null>(null)
-  const [matched, setMatched] = useState<boolean>(false)
+  const [matched, setMatched] = useState(false)
+  const [tryCount, setTryCount] = useState([...Array(playerCount)].map(_ => 0))
 
   function toggleCard(targetCards: Card[], { opener }: { opener: Player | null }) {
     setCards(cards.map(c => {
@@ -76,6 +77,12 @@ function useGame(playerCount: number) {
     }))
   }
 
+  function incrementTryCount(player: Player) {
+    const counts = [...tryCount]
+    counts[player] += 1
+    setTryCount(counts)
+  }
+
   function handleSelectCard(card: Card) {
     if (card.opener !== null || isTurnDone())
       return
@@ -86,6 +93,7 @@ function useGame(playerCount: number) {
     } else if (!opened2) {
       setOpened2(card)
       setMatched(opened1.num === card.num)
+      incrementTryCount(currentPlayer)
     }
   }
 
@@ -97,7 +105,8 @@ function useGame(playerCount: number) {
     if (isGameDone()) {
       const result = [...Array(playerCount)].map((_, player) => ({
         player,
-        count: cards.filter(c => c.opener === player).length
+        gotCardCount: cards.filter(c => c.opener === player).length,
+        tryCount: tryCount[player],
       }))
       setResult(result)
     } else if (isTurnDone()) {
@@ -141,8 +150,8 @@ function Card({ card, onSelect }: CardProps) {
 
 type ResultProps = { result: Result, onDone: () => void }
 function Result({ result, onDone }: ResultProps) {
-  const max = Math.max(...result.map(r => r.count))
-  const winners = result.filter(r => r.count === max)
+  const max = Math.max(...result.map(r => r.gotCardCount))
+  const winners = result.filter(r => r.gotCardCount === max)
 
   return (
     <>
@@ -154,7 +163,7 @@ function Result({ result, onDone }: ResultProps) {
         {
           result.map((r, i) => (
             <Text key={i} style={styles.result}>
-              {`${playerName(r.player)}さん: ${r.count}枚`}
+              {`${playerName(r.player)}さん: ${r.gotCardCount}枚, ${r.tryCount}回`}
             </Text>
           ))
         }
