@@ -8,7 +8,7 @@
  * @format
  */
 
-import React, { useState } from 'react';
+import React from 'react'
 import {
   SafeAreaView,
   StyleSheet,
@@ -16,23 +16,32 @@ import {
   View,
   Text,
   TouchableOpacity,
-} from 'react-native';
+} from 'react-native'
 
-declare var global: {HermesInternal: null | {}};
+declare var global: {HermesInternal: null | {}}
 
-function newCard(num) {
+const { useState } = React
+
+type Player = number
+type RawCard = { num: number, opener: Player | null }
+type Card = RawCard & { id: number }
+type PlayerResult = { player: Player, count: number }
+type Result = PlayerResult[]
+
+function newCard(num: number): RawCard {
   return {
     num,
     opener: null,
   }
 }
 
-function generateCards(count: number) {
-  const cards = [...Array(count / 2)].map((_, i) => [newCard(i + 1), newCard(i + 1)]).flat()
+function generateCards(count: number): Card[] {
+  const rawCardPairs = [...Array(count / 2)].map((_, i) => [newCard(i + 1), newCard(i + 1)])
+  const cards = rawCardPairs.flat()
   return cards.map((c, i) => ({ ...c, id: i }))
 }
 
-function shuffle(arr) {
+function shuffle<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i >= 0; --i) {
     const j = Math.floor(Math.random() * (i + 1))
     const tmp = arr[i]
@@ -42,7 +51,7 @@ function shuffle(arr) {
   return arr
 }
 
-function playerName(player) {
+function playerName(player: Player) {
   return `${player + 1}ばん`
 }
 
@@ -50,13 +59,13 @@ function useGame(playerCount: number) {
   let _cards = generateCards(24)
   _cards = shuffle(_cards)
   const [cards, setCards] = useState(_cards)
-  const [currentPlayer, setCurrentPlayer] = useState(0)
-  const [opened1, setOpened1] = useState(null)
-  const [opened2, setOpened2] = useState(null)
-  const [result, setResult] = useState(null)
-  const [matched, setMatched] = useState(false)
+  const [currentPlayer, setCurrentPlayer] = useState<Player>(0)
+  const [opened1, setOpened1] = useState<Card | null>(null)
+  const [opened2, setOpened2] = useState<Card | null>(null)
+  const [result, setResult] = useState<Result | null>(null)
+  const [matched, setMatched] = useState<boolean>(false)
 
-  function toggleCard(targetCards, { opener }) {
+  function toggleCard(targetCards: Card[], { opener }: { opener: Player | null }) {
     setCards(cards.map(c => {
       const isTarget = !!targetCards.find(tc => tc.id === c.id)
       if (isTarget) {
@@ -67,7 +76,7 @@ function useGame(playerCount: number) {
     }))
   }
 
-  function handleSelectCard(card) {
+  function handleSelectCard(card: Card) {
     if (card.opener !== null || isTurnDone())
       return
 
@@ -92,8 +101,8 @@ function useGame(playerCount: number) {
       }))
       setResult(result)
     } else if (isTurnDone()) {
-      if (opened1.num !== opened2.num) {
-        toggleCard([opened1, opened2], { opener: null })
+      if (opened1!.num !== opened2!.num) {
+        toggleCard([opened1!, opened2!], { opener: null })
         setCurrentPlayer((currentPlayer + 1) % playerCount)
       }
       setOpened1(null)
@@ -117,7 +126,8 @@ function useGame(playerCount: number) {
   }
 }
 
-function Card({ card, onSelect }) {
+type CardProps = { card: Card, onSelect: (card: Card) => void }
+function Card({ card, onSelect }: CardProps) {
   function handlePress() {
     onSelect(card)
   }
@@ -129,7 +139,8 @@ function Card({ card, onSelect }) {
   )
 }
 
-function Result({ result, onDone }) {
+type ResultProps = { result: Result, onDone: () => void }
+function Result({ result, onDone }: ResultProps) {
   const max = Math.max(...result.map(r => r.count))
   const winners = result.filter(r => r.count === max)
 
@@ -155,7 +166,8 @@ function Result({ result, onDone }) {
   )
 }
 
-function Game({ playerCount, onDone }) {
+type GameProps = { playerCount: number, onDone: () => void }
+function Game({ playerCount, onDone }: GameProps) {
   const {
     cards,
     currentPlayer,
@@ -195,8 +207,9 @@ function Game({ playerCount, onDone }) {
   )
 }
 
-function GameStart({ onSelectPlayerCount }) {
-  function handlePress(n) {
+type GameStartProps = { onSelectPlayerCount: (n: number) => void }
+function GameStart({ onSelectPlayerCount }: GameStartProps) {
+  function handlePress(n: number) {
     return () => { onSelectPlayerCount(n) }
   }
 
@@ -227,9 +240,9 @@ function GameStart({ onSelectPlayerCount }) {
 }
 
 function App() {
-  const [playerCount, setPlayerCount] = useState(null)
+  const [playerCount, setPlayerCount] = useState<number | null>(null)
 
-  function handleSelectPlayerCount(n) {
+  function handleSelectPlayerCount(n: number) {
     return () => { setPlayerCount(n) }
   }
 
@@ -242,13 +255,11 @@ function App() {
   return (
     <>
       <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
+        <ScrollView contentInsetAdjustmentBehavior="automatic">
           <View style={styles.body}>
             {
               isGameStarted
-              ? <Game playerCount={playerCount} onDone={handleGameDone} />
+              ? <Game playerCount={playerCount!} onDone={handleGameDone} />
               : <GameStart onSelectPlayerCount={setPlayerCount} />
             }
           </View>
