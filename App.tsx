@@ -8,7 +8,7 @@
  * @format
  */
 
-import React from 'react'
+import React from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -16,111 +16,119 @@ import {
   View,
   Text,
   TouchableOpacity,
-} from 'react-native'
+} from 'react-native';
 
-declare var global: {HermesInternal: null | {}}
+declare var global: {HermesInternal: null | {}};
 
-const { useState } = React
+const {useState} = React;
 
-type Player = number
-type RawCard = { num: number, opener: Player | null }
-type Card = RawCard & { id: number }
-type PlayerResult = { player: Player, gotCardCount: number, tryCount: number }
-type Result = PlayerResult[]
+type Player = number;
+type RawCard = {num: number; opener: Player | null};
+type Card = RawCard & {id: number};
+type PlayerResult = {player: Player; gotCardCount: number; tryCount: number};
+type Result = PlayerResult[];
 
 function newCard(num: number): RawCard {
   return {
     num,
     opener: null,
-  }
+  };
 }
 
 function generateCards(count: number): Card[] {
-  const rawCardPairs = [...Array(count / 2)].map((_, i) => [newCard(i + 1), newCard(i + 1)])
-  const cards = rawCardPairs.flat()
-  return cards.map((c, i) => ({ ...c, id: i }))
+  const rawCardPairs = [...Array(count / 2)].map((_, i) => [
+    newCard(i + 1),
+    newCard(i + 1),
+  ]);
+  const cards = rawCardPairs.flat();
+  return cards.map((c, i) => ({...c, id: i}));
 }
 
 function shuffle<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i >= 0; --i) {
-    const j = Math.floor(Math.random() * (i + 1))
-    const tmp = arr[i]
-    arr[i] = arr[j]
-    arr[j] = tmp
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
   }
-  return arr
+  return arr;
 }
 
 function playerName(player: Player) {
-  return `${player + 1}ばん`
+  return `${player + 1}ばん`;
 }
 
 function useGame(playerCount: number) {
-  let _cards = generateCards(24)
-  _cards = shuffle(_cards)
-  const [cards, setCards] = useState(_cards)
-  const [currentPlayer, setCurrentPlayer] = useState<Player>(0)
-  const [opened1, setOpened1] = useState<Card | null>(null)
-  const [opened2, setOpened2] = useState<Card | null>(null)
-  const [result, setResult] = useState<Result | null>(null)
-  const [matched, setMatched] = useState(false)
-  const [tryCount, setTryCount] = useState([...Array(playerCount)].map(_ => 0))
+  let _cards = generateCards(24);
+  _cards = shuffle(_cards);
+  const [cards, setCards] = useState(_cards);
+  const [currentPlayer, setCurrentPlayer] = useState<Player>(0);
+  const [opened1, setOpened1] = useState<Card | null>(null);
+  const [opened2, setOpened2] = useState<Card | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
+  const [matched, setMatched] = useState(false);
+  const [tryCount, setTryCount] = useState(
+    [...Array(playerCount)].map((_) => 0),
+  );
 
-  function toggleCard(targetCards: Card[], { opener }: { opener: Player | null }) {
-    setCards(cards.map(c => {
-      const isTarget = !!targetCards.find(tc => tc.id === c.id)
-      if (isTarget) {
-        return { ...c, opener }
-      } else {
-        return c
-      }
-    }))
+  function toggleCard(targetCards: Card[], {opener}: {opener: Player | null}) {
+    setCards(
+      cards.map((c) => {
+        const isTarget = !!targetCards.find((tc) => tc.id === c.id);
+        if (isTarget) {
+          return {...c, opener};
+        } else {
+          return c;
+        }
+      }),
+    );
   }
 
   function incrementTryCount(player: Player) {
-    const counts = [...tryCount]
-    counts[player] += 1
-    setTryCount(counts)
+    const counts = [...tryCount];
+    counts[player] += 1;
+    setTryCount(counts);
   }
 
   function handleSelectCard(card: Card) {
-    if (card.opener !== null || isTurnDone())
-      return
+    if (card.opener !== null || isTurnDone()) {
+      return;
+    }
 
-    toggleCard([card], { opener: currentPlayer })
+    toggleCard([card], {opener: currentPlayer});
     if (!opened1) {
-      setOpened1(card)
+      setOpened1(card);
     } else if (!opened2) {
-      setOpened2(card)
-      setMatched(opened1.num === card.num)
-      incrementTryCount(currentPlayer)
+      setOpened2(card);
+      setMatched(opened1.num === card.num);
+      incrementTryCount(currentPlayer);
     }
   }
 
   function isTurnDone() {
-    return opened1 && opened2
+    return opened1 && opened2;
   }
 
   function nextTurn() {
     if (isGameDone()) {
       const result = [...Array(playerCount)].map((_, player) => ({
         player,
-        gotCardCount: cards.filter(c => c.opener === player).length,
+        gotCardCount: cards.filter((c) => c.opener === player).length,
         tryCount: tryCount[player],
-      }))
-      setResult(result)
+      }));
+      setResult(result);
     } else if (isTurnDone()) {
       if (opened1!.num !== opened2!.num) {
-        toggleCard([opened1!, opened2!], { opener: null })
-        setCurrentPlayer((currentPlayer + 1) % playerCount)
+        toggleCard([opened1!, opened2!], {opener: null});
+        setCurrentPlayer((currentPlayer + 1) % playerCount);
       }
-      setOpened1(null)
-      setOpened2(null)
+      setOpened1(null);
+      setOpened2(null);
     }
   }
 
   function isGameDone() {
-    return cards.every(c => c.opener !== null)
+    return cards.every((c) => c.opener !== null);
   }
 
   return {
@@ -132,51 +140,53 @@ function useGame(playerCount: number) {
     isGameDone,
     result,
     matched,
-  }
+  };
 }
 
-type CardProps = { card: Card, onSelect: (card: Card) => void }
-function Card({ card, onSelect }: CardProps) {
+type CardProps = {card: Card; onSelect: (card: Card) => void};
+function Card({card, onSelect}: CardProps) {
   function handlePress() {
-    onSelect(card)
+    onSelect(card);
   }
 
   return (
     <TouchableOpacity style={styles.card} onPress={handlePress}>
-      <Text style={styles.cardText}>{ card.opener !== null ? card.num : '?' }</Text>
+      <Text style={styles.cardText}>
+        {card.opener !== null ? card.num : '?'}
+      </Text>
     </TouchableOpacity>
-  )
+  );
 }
 
-type ResultProps = { result: Result, onDone: () => void }
-function Result({ result, onDone }: ResultProps) {
-  const max = Math.max(...result.map(r => r.gotCardCount))
-  const winners = result.filter(r => r.gotCardCount === max)
+type ResultProps = {result: Result; onDone: () => void};
+function Result({result, onDone}: ResultProps) {
+  const max = Math.max(...result.map((r) => r.gotCardCount));
+  const winners = result.filter((r) => r.gotCardCount === max);
 
   return (
     <>
       <Text style={styles.title}>
-        { winners.map(w => `${playerName(w.player)}さん`).join('と') }
+        {winners.map((w) => `${playerName(w.player)}さん`).join('と')}
         のかち！
       </Text>
       <View style={styles.results}>
-        {
-          result.map((r, i) => (
-            <Text key={i} style={styles.result}>
-              {`${playerName(r.player)}さん: ${r.gotCardCount}枚, ${r.tryCount}回`}
-            </Text>
-          ))
-        }
+        {result.map((r, i) => (
+          <Text key={i} style={styles.result}>
+            {`${playerName(r.player)}さん: ${r.gotCardCount}枚, ${
+              r.tryCount
+            }回`}
+          </Text>
+        ))}
       </View>
       <TouchableOpacity onPress={onDone} style={styles.primaryButton}>
         <Text style={styles.primaryButtonText}>もういっかい</Text>
       </TouchableOpacity>
     </>
-  )
+  );
 }
 
-type GameProps = { playerCount: number, onDone: () => void }
-function Game({ playerCount, onDone }: GameProps) {
+type GameProps = {playerCount: number; onDone: () => void};
+function Game({playerCount, onDone}: GameProps) {
   const {
     cards,
     currentPlayer,
@@ -186,96 +196,99 @@ function Game({ playerCount, onDone }: GameProps) {
     isGameDone,
     result,
     matched,
-  } = useGame(playerCount)
+  } = useGame(playerCount);
 
   if (result) {
-    return (
-      <Result result={result} onDone={onDone} />
-    )
+    return <Result result={result} onDone={onDone} />;
   }
 
   return (
     <>
-      <Text style={styles.currentPlayerTitle}>{`${playerName(currentPlayer)}さんどうぞ`}</Text>
+      <Text style={styles.currentPlayerTitle}>{`${playerName(
+        currentPlayer,
+      )}さんどうぞ`}</Text>
       <View style={styles.cards}>
-        {
-          cards.map((card, i) => <Card key={i} card={card} onSelect={handleSelectCard} />)
-        }
+        {cards.map((card, i) => (
+          <Card key={i} card={card} onSelect={handleSelectCard} />
+        ))}
       </View>
-      {
-        isTurnDone() && (
-          <>
-            <Text style={styles.matched}>{ matched ? 'せいかい' : 'まちがい' }</Text>
-            <TouchableOpacity onPress={nextTurn} style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>{ isGameDone() ? 'おわり' : 'つぎへ' }</Text>
-            </TouchableOpacity>
-          </>
-        )
-      }
+      {isTurnDone() && (
+        <>
+          <Text style={styles.matched}>
+            {matched ? 'せいかい' : 'まちがい'}
+          </Text>
+          <TouchableOpacity onPress={nextTurn} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>
+              {isGameDone() ? 'おわり' : 'つぎへ'}
+            </Text>
+          </TouchableOpacity>
+        </>
+      )}
     </>
-  )
+  );
 }
 
-type GameStartProps = { onSelectPlayerCount: (n: number) => void }
-function GameStart({ onSelectPlayerCount }: GameStartProps) {
+type GameStartProps = {onSelectPlayerCount: (n: number) => void};
+function GameStart({onSelectPlayerCount}: GameStartProps) {
   function handlePress(n: number) {
-    return () => { onSelectPlayerCount(n) }
+    return () => {
+      onSelectPlayerCount(n);
+    };
   }
 
   return (
     <>
-      <Text style={styles.title}>
-        しんけいすいじゃく！
-      </Text>
-      <Text style={styles.label}>
-        なんにんであそぶ？
-      </Text>
+      <Text style={styles.title}>しんけいすいじゃく！</Text>
+      <Text style={styles.label}>なんにんであそぶ？</Text>
       <View style={styles.chooseContainer}>
-        {
-          [
-            { n: 1, label: 'ひとり' },
-            { n: 2, label: 'ふたり' },
-            { n: 3, label: 'さんにん' },
-            { n: 4, label: 'よにん' }
-          ].map((n) => (
-            <TouchableOpacity key={n.n} style={styles.playerCountButton} onPress={handlePress(n.n)}>
-              <Text style={styles.playerCountButtonText}>{n.label}</Text>
-            </TouchableOpacity>
-          ))
-        }
+        {[
+          {n: 1, label: 'ひとり'},
+          {n: 2, label: 'ふたり'},
+          {n: 3, label: 'さんにん'},
+          {n: 4, label: 'よにん'},
+        ].map((n) => (
+          <TouchableOpacity
+            key={n.n}
+            style={styles.playerCountButton}
+            onPress={handlePress(n.n)}>
+            <Text style={styles.playerCountButtonText}>{n.label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </>
-  )
+  );
 }
 
 function App() {
-  const [playerCount, setPlayerCount] = useState<number | null>(null)
+  const [playerCount, setPlayerCount] = useState<number | null>(null);
 
   function handleSelectPlayerCount(n: number) {
-    return () => { setPlayerCount(n) }
+    return () => {
+      setPlayerCount(n);
+    };
   }
 
   function handleGameDone() {
-    setPlayerCount(null)
+    setPlayerCount(null);
   }
 
-  const isGameStarted = playerCount !== null
+  const isGameStarted = playerCount !== null;
 
   return (
     <>
       <SafeAreaView>
         <ScrollView contentInsetAdjustmentBehavior="automatic">
           <View style={styles.body}>
-            {
-              isGameStarted
-              ? <Game playerCount={playerCount!} onDone={handleGameDone} />
-              : <GameStart onSelectPlayerCount={setPlayerCount} />
-            }
+            {isGameStarted ? (
+              <Game playerCount={playerCount!} onDone={handleGameDone} />
+            ) : (
+              <GameStart onSelectPlayerCount={setPlayerCount} />
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>
     </>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -359,6 +372,6 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     fontSize: 25,
   },
-})
+});
 
-export default App
+export default App;
